@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link rel="stylesheet" href="student-vibe.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">tailwind.config = { theme: { extend: { colors: { "primary": "#00236f", "primary-container": "#1e3a8a", "on-primary": "#ffffff", "surface": "#f8f9ff", "surface-container-lowest": "#ffffff", "surface-container": "#e5eeff", "on-surface": "#0b1c30", "on-surface-variant": "#444651", "tertiary-container": "#004942" } } } };</script>
+</head>
+<body class="bg-surface font-sans text-on-surface min-h-screen pb-20">
+<div class="max-w-md mx-auto px-4 py-6">
+<div class="flex items-center gap-2 mb-6">
+<button onclick="window.location.href='student_home.html'"><span class="material-symbols-outlined">arrow_back</span></button>
+<h1 class="text-xl font-semibold">Attendance History</h1>
+</div>
+
+<div class="flex flex-col gap-2" id="historyList"></div>
+<p class="hidden text-sm text-on-surface-variant text-center py-8" id="emptyState">No attendance marked yet.</p>
+</div>
+
+<nav class="fixed bottom-0 left-0 right-0 bg-surface-container-lowest border-t flex justify-around py-2 max-w-md mx-auto">
+<a class="flex flex-col items-center gap-0.5 text-on-surface-variant" href="student_home.html"><span class="material-symbols-outlined text-[22px]">home</span><span class="text-xs">Home</span></a>
+<a class="flex flex-col items-center gap-0.5 text-primary" href="student_history.html"><span class="material-symbols-outlined text-[22px]">history</span><span class="text-xs font-medium">History</span></a>
+</nav>
+
+<script src="config.js"></script><script src="api.js"></script>
+<script>
+  const user = requireAuth('student');
+
+  async function loadHistory() {
+    try {
+      const history = await apiRequest('/attendance/history');
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+      document.getElementById('emptyState').classList.toggle('hidden', history.length > 0);
+      history.forEach(h => {
+        const row = document.createElement('div');
+        row.className = 'bg-surface-container-lowest rounded-xl shadow-sm p-4 flex items-center justify-between';
+        row.innerHTML = `
+          <div>
+            <div class="font-medium text-sm">${escapeHtml(h.subject_name)}</div>
+            <div class="text-xs text-on-surface-variant">${escapeHtml(h.marked_at)}</div>
+          </div>
+          <span class="material-symbols-outlined text-tertiary-container">check_circle</span>
+        `;
+        list.appendChild(row);
+      });
+    } catch (err) {
+      alert('Could not load history: ' + err.message);
+    }
+  }
+
+  if (user) loadHistory();
+</script>
+</body></html>

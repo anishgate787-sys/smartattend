@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: smartattend
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SMARTATTEND_ENV
+        value: production
+      - key: SMARTATTEND_SECRET
+        generateValue: true
+      - key: SMARTATTEND_TOKEN_SECRET
+        generateValue: true
+      - key: SMARTATTEND_CORS_ORIGINS
+        sync: false
+      - key: SMARTATTEND_DB_PATH
+        value: /var/data/smartattend.db
+    disk:
+      name: smartattend-data
+      mountPath: /var/data
+      sizeGB: 1

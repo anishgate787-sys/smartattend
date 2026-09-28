@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">tailwind.config = { theme: { extend: { colors: { "primary": "#00236f", "primary-container": "#1e3a8a", "on-primary": "#ffffff", "surface": "#f8f9ff", "surface-container-lowest": "#ffffff", "surface-container-low": "#eff4ff", "surface-container": "#e5eeff", "surface-container-high": "#dce9ff", "on-surface": "#0b1c30", "on-surface-variant": "#444651", "error": "#ba1a1a", "error-container": "#ffdad6", "on-error-container": "#93000a", "outline": "#757682" } } } };</script>
+<style>::-webkit-scrollbar{display:none;}</style></head>
+<body class="bg-surface font-sans text-on-surface min-h-screen">
+<div class="flex min-h-screen">
+<!-- Sidebar -->
+<aside class="w-56 bg-surface-container-lowest border-r border-surface-container-high flex flex-col py-6 px-4 hidden md:flex">
+<div class="flex items-center gap-2 mb-8 px-2">
+<span class="material-symbols-outlined text-primary-container text-[26px]">how_to_reg</span>
+<span class="font-bold text-lg text-primary">SmartAttend</span>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container text-primary font-semibold text-sm" href="faculty_dashboard.html"><span class="material-symbols-outlined text-[20px]">dashboard</span>Dashboard</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container text-sm" href="faculty_analytics.html"><span class="material-symbols-outlined text-[20px]">bar_chart</span>Analytics</a>
+</nav>
+<button class="mt-auto flex items-center gap-3 px-3 py-2 rounded-lg text-error hover:bg-error-container text-sm" onclick="logout()"><span class="material-symbols-outlined text-[20px]">logout</span>Logout</button>
+</aside>
+
+<main class="flex-1 p-6 max-w-4xl mx-auto w-full">
+<div class="flex items-center justify-between mb-6">
+<div>
+<h1 class="text-2xl font-semibold" id="greeting">Welcome</h1>
+<p class="text-sm text-on-surface-variant">Manage your subjects and take attendance</p>
+</div>
+<button class="md:hidden text-error text-sm font-medium" onclick="logout()">Logout</button>
+</div>
+
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-4 mb-6">
+<h2 class="text-sm font-semibold mb-3">Add a new subject</h2>
+<form class="flex gap-2" id="addSubjectForm">
+<input class="flex-1 h-10 px-3 rounded-lg bg-surface-container-low text-sm outline-none focus:shadow-[0_0_0_2px] focus:shadow-primary-container" id="subjectNameInput" placeholder="e.g. Data Structures" required type="text"/>
+<button class="h-10 px-4 bg-primary-container text-on-primary rounded-lg text-sm font-semibold" type="submit">Add</button>
+</form>
+<p class="hidden text-error text-xs mt-2" id="subjectError"></p>
+</div>
+
+<h2 class="text-sm font-semibold mb-3 text-on-surface-variant">Your subjects</h2>
+<div class="grid gap-3 sm:grid-cols-2" id="subjectsGrid"></div>
+<p class="hidden text-sm text-on-surface-variant text-center py-8" id="emptyState">No subjects yet — add one above to get started.</p>
+</main>
+</div>
+
+<script src="config.js"></script><script src="api.js"></script>
+<script>
+  const user = requireAuth('faculty');
+  if (user) document.getElementById('greeting').innerText = `Welcome, ${user.name}`;
+
+  async function loadSubjects() {
+    try {
+      const subjects = await apiRequest('/subjects/mine');
+      const grid = document.getElementById('subjectsGrid');
+      grid.innerHTML = '';
+      document.getElementById('emptyState').classList.toggle('hidden', subjects.length > 0);
+      subjects.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'bg-surface-container-lowest rounded-xl shadow-sm p-4 flex flex-col gap-3';
+        card.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary-container">menu_book</span>
+            <span class="font-semibold text-sm">${escapeHtml(s.name)}</span>
+          </div>
+          <button class="h-9 bg-primary-container text-on-primary rounded-lg text-sm font-semibold" onclick="startSession(${s.id})">Start Session</button>
+        `;
+        grid.appendChild(card);
+      });
+    } catch (err) {
+      alert('Could not load subjects: ' + err.message);
+    }
+  }
+
+  document.getElementById('addSubjectForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nameInput = document.getElementById('subjectNameInput');
+    const errEl = document.getElementById('subjectError');
+    errEl.classList.add('hidden');
+    try {
+      await apiRequest('/subjects', { method: 'POST', body: JSON.stringify({ name: nameInput.value.trim() }) });
+      nameInput.value = '';
+      loadSubjects();
+    } catch (err) {
+      errEl.innerText = err.message;
+      errEl.classList.remove('hidden');
+    }
+  });
+
+  async function startSession(subjectId) {
+    try {
+      const result = await apiRequest('/session/start', { method: 'POST', body: JSON.stringify({ subject_id: subjectId }) });
+      window.location.href = `faculty_session.html?session_id=${result.session_id}`;
+    } catch (err) {
+      alert('Could not start session: ' + err.message);
+    }
+  }
+
+  if (user) loadSubjects();
+</script>
+</body></html>
