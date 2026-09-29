@@ -98,6 +98,12 @@
       await apiRequest('/attendance/mark', { method: 'POST', body: JSON.stringify({ qr_payload: qrPayload }) });
       showResult(true, 'Attendance Marked!', 'You have been marked present for this session.');
     } catch (err) {
+      if (/student account|not authenticated|session expired/i.test(err.message)) {
+        localStorage.removeItem('sa_token');
+        localStorage.removeItem('sa_user');
+        window.location.href = `index.html?return_to=${encodeURIComponent(scanReturnTo)}`;
+        return;
+      }
       showResult(false, 'Could Not Mark Attendance', err.message);
     }
   }
