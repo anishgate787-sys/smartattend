@@ -1,12 +1,12 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from pydantic import BaseModel
 import os
 import csv
 import io
+import qrcode
 
 
 def load_local_env():
@@ -460,6 +460,21 @@ def session_attendance(session_id: int, request: Request):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/qr.png")
+def qr_image(data: str):
+    """Generate a high-contrast QR image without relying on a browser CDN."""
+    if not data or len(data) > 2048:
+        raise HTTPException(status_code=400, detail="Invalid QR data")
+    image = qrcode.make(data, error_correction=qrcode.constants.ERROR_CORRECT_H, border=4)
+    output = io.BytesIO()
+    image.save(output, format="PNG")
+    return Response(
+        content=output.getvalue(),
+        media_type="image/png",
+        headers={"Cache-Control": "no-store"},
+    )
 
 if os.path.isdir(FRONTEND_DIR):
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

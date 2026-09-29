@@ -3,7 +3,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script id="tailwind-config">tailwind.config = { theme: { extend: { colors: { "primary": "#00236f", "primary-container": "#1e3a8a", "on-primary": "#ffffff", "surface": "#f8f9ff", "surface-container-lowest": "#ffffff", "surface-container-low": "#eff4ff", "surface-container": "#e5eeff", "on-surface": "#0b1c30", "on-surface-variant": "#444651", "error": "#ba1a1a", "tertiary-container": "#004942" } } } };</script>
 </head>
 <body class="bg-surface font-sans text-on-surface min-h-screen flex flex-col items-center px-4 py-8">
@@ -59,11 +58,6 @@
   function renderQR(payload) {
     const container = document.getElementById('qrContainer');
     container.innerHTML = '';
-    if (typeof QRCode === 'undefined') {
-      document.getElementById('errorMsg').innerText = 'QR generator could not load. Check your connection and refresh.';
-      document.getElementById('errorMsg').classList.remove('hidden');
-      return;
-    }
     const configuredValue = (window.SMARTATTEND_PUBLIC_URL || '').trim();
     let configuredOrigin = window.location.origin;
     try {
@@ -78,12 +72,17 @@
     }
     configuredOrigin = configuredOrigin.replace(/\/$/, '');
     const attendanceUrl = `${configuredOrigin}/student_scan.html?payload=${encodeURIComponent(payload)}`;
-    new QRCode(container, {
-      text: attendanceUrl,
-      width: 220,
-      height: 220,
-      correctLevel: QRCode.CorrectLevel.H
-    });
+    const image = document.createElement('img');
+    image.src = `/qr.png?data=${encodeURIComponent(attendanceUrl)}`;
+    image.alt = 'Attendance QR code';
+    image.width = 220;
+    image.height = 220;
+    image.className = 'bg-white';
+    image.onerror = () => {
+      document.getElementById('errorMsg').innerText = 'QR image could not be generated. Refresh the page and try again.';
+      document.getElementById('errorMsg').classList.remove('hidden');
+    };
+    container.appendChild(image);
     document.getElementById('qrLink').innerText = attendanceUrl;
 
     const host = new URL(configuredOrigin).hostname;
