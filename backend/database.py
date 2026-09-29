@@ -5,8 +5,20 @@ DEFAULT_DB_PATH = os.path.join(os.path.dirname(__file__), "smartattend.db")
 DB_PATH = os.environ.get("SMARTATTEND_DB_PATH", DEFAULT_DB_PATH)
 
 
+def _ensure_db_directory():
+    global DB_PATH
+    directory = os.path.dirname(os.path.abspath(DB_PATH))
+    try:
+        os.makedirs(directory, exist_ok=True)
+    except PermissionError:
+        # Render can start without an attached disk. /tmp is writable, but
+        # its contents are ephemeral; attach a disk for permanent attendance data.
+        DB_PATH = "/tmp/smartattend.db"
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+
 def get_db():
-    os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
+    _ensure_db_directory()
     conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")

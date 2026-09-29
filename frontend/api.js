@@ -41,11 +41,14 @@ function logout() {
   window.location.href = "index.html";
 }
 
-function requireAuth(expectedRole) {
+function requireAuth(expectedRole, returnTo = "") {
   const user = getUser();
   const token = getToken();
   if (!user || !token) {
-    window.location.href = "index.html";
+    const loginUrl = returnTo
+      ? `index.html?return_to=${encodeURIComponent(returnTo)}`
+      : "index.html";
+    window.location.href = loginUrl;
     return null;
   }
   if (expectedRole && user.role !== expectedRole) {

@@ -41,7 +41,9 @@
 
 <script src="config.js"></script><script src="api.js"></script>
 <script>
-  const user = requireAuth('student');
+  const scanParams = new URLSearchParams(window.location.search);
+  const preloadedPayload = scanParams.get('payload');
+  const user = requireAuth('student', preloadedPayload ? `student_scan.html?payload=${encodeURIComponent(preloadedPayload)}` : 'student_scan.html');
   let stream = null;
   let scanning = true;
   let scanLoopHandle = null;
@@ -79,6 +81,10 @@
   }
 
   async function handleScan(qrPayload) {
+    scanning = false;
+    if (scanLoopHandle) cancelAnimationFrame(scanLoopHandle);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    document.getElementById('instruction').innerText = 'Submitting attendance...';
     try {
       await apiRequest('/attendance/mark', { method: 'POST', body: JSON.stringify({ qr_payload: qrPayload }) });
       showResult(true, 'Attendance Marked!', 'You have been marked present for this session.');
@@ -105,6 +111,11 @@
     window.location.href = url;
   }
 
-  if (user) startCamera();
+  if (user) {
+    // Camera and Lens open this page with the token in the URL. Submit it
+    // directly; otherwise start the in-app camera scanner.
+    if (preloadedPayload) handleScan(preloadedPayload);
+    else startCamera();
+  }
 </script>
 </body></html>

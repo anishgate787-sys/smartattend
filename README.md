@@ -31,6 +31,17 @@ prebuilt Python 3.14 wheels, so installation does not require Rust or Cargo.
 
 The repository includes `render.yaml` as a starting point for a Render deployment. Camera scanning requires HTTPS in production (localhost is the exception).
 
+### Phone camera and Google Lens QR scanning
+
+The QR contains a normal SmartAttend URL, so Camera and Google Lens can open it directly. When running on a faculty computer, the phone must be able to reach that computer on the same Wi-Fi network:
+
+1. Start Uvicorn with `--host 0.0.0.0 --port 8000`.
+2. Find the computer's LAN IPv4 address with `ipconfig`.
+3. Set `window.SMARTATTEND_PUBLIC_URL` in `frontend/config.js` to `http://YOUR-LAN-IP:8000`, or use the public HTTPS deployment URL.
+4. Open the app once on the student's phone, sign in, then scan the faculty QR with Camera or Google Lens.
+
+Do not use `localhost`, `127.0.0.1`, or `0.0.0.0` in the QR URL: those addresses refer to the scanning phone itself.
+
 ## Checks
 
 ```powershell

@@ -9,7 +9,7 @@ except ImportError:  # Supports running modules directly from backend.
     from database import get_db
 
 TOKEN_SECRET = os.environ.get("SMARTATTEND_TOKEN_SECRET", "dev-token-secret-change-this")
-TOKEN_LIFETIME_SECONDS = 15  # Short-lived, but practical for a phone camera scan.
+TOKEN_LIFETIME_SECONDS = 60  # Gives Camera/Lens time to open the attendance URL.
 
 # very small in-memory rate limiter: student_id -> list of recent attempt timestamps
 _scan_attempts = {}

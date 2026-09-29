@@ -208,8 +208,10 @@
       }
       saveSession(data);
       showToast(`Welcome, ${data.name}!`);
+      const returnTo = new URLSearchParams(window.location.search).get('return_to');
+      const safeReturnTo = returnTo && returnTo.startsWith('student_scan.html') ? returnTo : '';
       setTimeout(() => {
-        window.location.href = data.role === 'faculty' ? 'faculty_dashboard.html' : 'student_home.html';
+        window.location.href = safeReturnTo || (data.role === 'faculty' ? 'faculty_dashboard.html' : 'student_home.html');
       }, 600);
     } catch (err) {
       showError(err.message);
