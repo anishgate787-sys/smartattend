@@ -168,10 +168,14 @@
   // If already logged in, skip straight to the right dashboard.
   (function redirectIfLoggedIn() {
     const user = getUser();
-    if (user && getToken()) {
+    const hasScanReturn = new URLSearchParams(window.location.search).has('return_to');
+    if (user && getToken() && !hasScanReturn) {
       window.location.href = user.role === 'faculty' ? 'faculty_dashboard.html' : 'student_home.html';
     }
   })();
+
+  const scanLogin = new URLSearchParams(window.location.search).has('return_to');
+  if (scanLogin) switchRole('student');
 
   document.getElementById('authForm').addEventListener('submit', async function (e) {
     e.preventDefault();

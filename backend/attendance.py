@@ -9,7 +9,7 @@ except ImportError:  # Supports running modules directly from backend.
     from database import get_db
 
 TOKEN_SECRET = os.environ.get("SMARTATTEND_TOKEN_SECRET", "dev-token-secret-change-this")
-TOKEN_LIFETIME_SECONDS = 60  # Gives Camera/Lens time to open the attendance URL.
+TOKEN_LIFETIME_SECONDS = 8 * 60 * 60  # One QR remains valid for the whole class session.
 
 # very small in-memory rate limiter: student_id -> list of recent attempt timestamps
 _scan_attempts = {}
@@ -75,6 +75,26 @@ def generate_token(session_id: int, faculty_id: int):
     if session["status"] != "active":
         conn.close()
         return None, "Session has ended"
+
+    # Keep one stable QR for the session. Every enrolled student can reuse it.
+    existing = cur.execute(
+        "SELECT * FROM tokens WHERE session_id = ? AND expires_at > ? ORDER BY id DESC LIMIT 1",
+        (session_id, time.time()),
+    ).fetchone()
+    if existing:
+        present_count = cur.execute(
+            "SELECT COUNT(*) as c FROM attendance WHERE session_id = ?", (session_id,)
+        ).fetchone()["c"]
+        enrolled_count = cur.execute(
+            "SELECT COUNT(*) as c FROM enrollments WHERE subject_id = ?", (session["subject_id"],)
+        ).fetchone()["c"]
+        conn.close()
+        return {
+            "qr_payload": existing["token_value"],
+            "expires_in": int(existing["expires_at"] - time.time()),
+            "marked_count": present_count,
+            "enrolled_count": enrolled_count,
+        }, None
 
     nonce = secrets.token_urlsafe(16)
     expires_at = time.time() + TOKEN_LIFETIME_SECONDS

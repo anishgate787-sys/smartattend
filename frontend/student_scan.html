@@ -43,7 +43,16 @@
 <script>
   const scanParams = new URLSearchParams(window.location.search);
   const preloadedPayload = scanParams.get('payload');
-  const user = requireAuth('student', preloadedPayload ? `student_scan.html?payload=${encodeURIComponent(preloadedPayload)}` : 'student_scan.html');
+  const scanReturnTo = preloadedPayload
+    ? `student_scan.html?payload=${encodeURIComponent(preloadedPayload)}`
+    : 'student_scan.html';
+  const existingUser = getUser();
+  if (preloadedPayload && existingUser && existingUser.role !== 'student') {
+    // A faculty login must not be reused for a student QR scan.
+    localStorage.removeItem('sa_token');
+    localStorage.removeItem('sa_user');
+  }
+  const user = requireAuth('student', scanReturnTo);
   let stream = null;
   let scanning = true;
   let scanLoopHandle = null;

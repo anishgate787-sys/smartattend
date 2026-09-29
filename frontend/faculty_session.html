@@ -25,7 +25,7 @@
 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary-container opacity-75"></span>
 <span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary-container"></span>
 </span>
-<span class="text-xs text-on-surface-variant" id="refreshLabel">Refreshing in 15s</span>
+<span class="text-xs text-on-surface-variant" id="refreshLabel">One QR active for this session</span>
 </div>
 
 <div class="bg-surface-container-lowest rounded-2xl shadow-sm p-5 w-full mt-4">
@@ -50,9 +50,6 @@
   const sessionId = params.get('session_id');
   if (!sessionId) window.location.href = 'faculty_dashboard.html';
 
-  let qrCodeInstance = null;
-  let countdownInterval = null;
-  let refreshInterval = null;
   let ended = false;
 
   function renderQR(payload) {
@@ -102,7 +99,6 @@
       const data = await apiRequest(`/session/${sessionId}/token`);
       renderQR(data.qr_payload);
       document.getElementById('markedCount').innerText = `${data.marked_count} / ${data.enrolled_count}`;
-      startCountdown(data.expires_in);
       loadLiveRoster();
     } catch (err) {
       document.getElementById('errorMsg').innerText = err.message;
@@ -130,21 +126,8 @@
     } catch (err) { /* The QR loop remains usable if the roster request is temporarily unavailable. */ }
   }
 
-  function startCountdown(seconds) {
-    clearInterval(countdownInterval);
-    let remaining = seconds;
-    document.getElementById('refreshLabel').innerText = `Refreshing in ${remaining}s`;
-    countdownInterval = setInterval(() => {
-      remaining -= 1;
-      if (remaining <= 0) { clearInterval(countdownInterval); return; }
-      document.getElementById('refreshLabel').innerText = `Refreshing in ${remaining}s`;
-    }, 1000);
-  }
-
   function stopTimers() {
     ended = true;
-    clearInterval(countdownInterval);
-    clearInterval(refreshInterval);
   }
 
   async function endSession() {
@@ -160,8 +143,6 @@
 
   if (user) {
     fetchAndShowToken();
-    // Refresh before expiry so the displayed code never has a dead gap.
-    refreshInterval = setInterval(fetchAndShowToken, 13000);
     setInterval(loadLiveRoster, 4000);
   }
 </script>
